@@ -1,0 +1,31 @@
+import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import authRoutes from './routes/auth.js';
+import courseRoutes from './routes/courses.js';
+import adminRoutes from './routes/admin.js';
+import quizRoutes from './routes/quizzes.js';
+import dashboardRoutes from './routes/dashboard.js';
+import { errorHandler, HttpError } from './middleware/http.js';
+
+export const app = express();
+app.disable('x-powered-by');
+app.use(helmet());
+app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173', credentials: true }));
+app.use(express.json({ limit: '150kb' }));
+app.use(cookieParser());
+app.use((req, _res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  const origin = req.get('origin');
+  if (origin && origin !== (process.env.CLIENT_ORIGIN || 'http://localhost:5173')) return next(new HttpError(403, 'Untrusted request origin'));
+  next();
+});
+app.get('/api/health', (_req, res) => res.json({ status: 'ok', name: 'LearnPulse AI' }));
+app.use('/api/auth', authRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/quizzes', quizRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api', (_req, _res, next) => next(new HttpError(404, 'API route not found')));
+app.use(errorHandler);
