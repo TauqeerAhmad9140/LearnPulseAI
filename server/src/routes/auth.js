@@ -52,6 +52,7 @@ router.post(
     startSession(res, user);
   }),
 );
+
 router.post(
   "/login",
   limiter,
